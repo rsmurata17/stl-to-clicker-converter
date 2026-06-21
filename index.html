@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STL to Cherry MX Clicker Converter</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>STL to Cherry MX Clicker Converter</h1>
+      <p>Upload an STL, choose scale and slice height, then generate top and bottom Cherry MX clicker parts.</p>
+    </div>
+  </header>
+
+  <main>
+    <aside class="panel">
+      <section>
+        <h2>1. Upload STL</h2>
+        <input id="fileInput" type="file" accept=".stl" />
+        <p id="fileStatus" class="muted">No file loaded.</p>
+      </section>
+
+      <section>
+        <h2>2. Adjust</h2>
+
+        <label for="scaleSlider">
+          Scale
+          <span id="scaleValue">1.00x</span>
+        </label>
+        <input id="scaleSlider" type="range" min="0.1" max="5" step="0.01" value="1" />
+
+        <label for="sliceSlider">
+          Slice Z Height
+          <span id="sliceValue">0.00</span>
+        </label>
+        <input id="sliceSlider" type="range" min="0" max="1" step="0.01" value="0.5" disabled />
+
+        <div id="warnings"></div>
+      </section>
+
+      <section>
+        <h2>3. Generate</h2>
+        <button id="generateButton" disabled>Generate Clicker STLs</button>
+        <p id="generateStatus" class="muted">Upload an STL first.</p>
+
+        <div class="download-grid">
+          <a id="downloadTop" class="download disabled" href="#" download="clicker_top.stl">Download Top STL</a>
+          <a id="downloadBottom" class="download disabled" href="#" download="clicker_bottom.stl">Download Bottom STL</a>
+        </div>
+      </section>
+
+      <section>
+        <h2>Measurements</h2>
+        <details open>
+          <summary>Cherry MX values</summary>
+          <dl>
+            <dt>Top housing cut</dt>
+            <dd>16.0 × 16.0 × 5.2 mm</dd>
+            <dt>Center boss</dt>
+            <dd>7.0 mm square</dd>
+            <dt>MX stem cross</dt>
+            <dd>4.20 mm width, 1.45 mm arm, 4.2 mm depth</dd>
+            <dt>Bottom cavity</dt>
+            <dd>16.0 × 16.0 × 5.2 mm</dd>
+            <dt>Pin grid</dt>
+            <dd>1.27 mm</dd>
+          </dl>
+        </details>
+      </section>
+    </aside>
+
+    <section class="viewer-wrap">
+      <div class="viewer-header">
+        <div>
+          <h2>Preview</h2>
+          <p class="muted">Drag to rotate. Scroll to zoom. The green cube is the Cherry MX reference; the red plane is the slice.</p>
+        </div>
+        <button id="resetCamera">Reset Camera</button>
+      </div>
+
+      <div id="viewer"></div>
+
+      <div id="stats" class="stats">
+        <span>Bounds: —</span>
+        <span>Faces: —</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>This app runs entirely in your browser. Large or non-watertight STLs may fail during boolean operations.</p>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
