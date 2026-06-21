@@ -1,5 +1,0 @@
-streamlit
-trimesh
-numpy
-scipy
-manifold3d
