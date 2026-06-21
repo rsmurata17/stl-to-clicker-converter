@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from "https://esm.sh/three@0.164.1";
 import { OrbitControls } from "https://esm.sh/three@0.164.1/examples/jsm/controls/OrbitControls.js?external=three";
 import { STLLoader } from "https://esm.sh/three@0.164.1/examples/jsm/loaders/STLLoader.js?external=three";
 import { STLExporter } from "https://esm.sh/three@0.164.1/examples/jsm/exporters/STLExporter.js?external=three";
