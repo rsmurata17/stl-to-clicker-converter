@@ -30,12 +30,12 @@ APP_VERSION = "v2.2.6"
 # -----------------------------
 DEFAULTS = {
     # Top half / switch stem side
-    "housing_size": 16.0,
+    "housing_size": 15.4,
     "housing_depth": 5.2,
     "cross_width": 4.20,
     "cross_arm": 1.45,
     "cross_depth": 4.2,
-    "stem_tolerance": 0.30,
+    "stem_tolerance": 0.50,
     "top_circular_clearance": 1.20,  # diameter is cross width + tolerance + this value
 
     # Bottom half / switch body side
