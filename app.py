@@ -515,4 +515,3 @@ if st.button("Generate clicker STLs", type="primary"):
         except Exception as exc:
             st.error(f"Generation failed: {exc}")
             st.info("Try a simpler/watertight STL, a different slice height, or a slightly different scale.")
-
