@@ -17,28 +17,26 @@ HOUSING_SIZE = 16.0
 HOUSING_DEPTH = 5.2
 CENTER_BOSS_SIZE = 7.0
 
-CROSS_WIDTH = 5
-CROSS_ARM = 2
+# Cross dimensions are the measured near-fit values, then clearance is added.
+# Increase TOP_STEM_TOLERANCE if the printed stem still feels too tight.
+CROSS_WIDTH = 4.20
+CROSS_ARM = 1.45
 CROSS_DEPTH = 4.2
+TOP_STEM_TOLERANCE = 0.20
 
 BOTTOM_CAVITY_SIZE = 16.0
 BOTTOM_CAVITY_DEPTH = 5.2
 
+# Center post clearance for the bottom half.
+# Increase CENTER_HOLE_TOLERANCE if the switch center post still binds.
 CENTER_HOLE_DIA = 4.00
-FIXATION_PIN_DIA = 1.80
-CONTACT_PIN_DIA = 1.60
+CENTER_HOLE_TOLERANCE = 0.30
 
+# Universal bottom cavity: keep a circular center support wall, remove the rest
+# as one open pocket so different switch pin layouts can fit.
+CENTER_SUPPORT_WALL = 1.40
+UNIVERSAL_CAVITY_DEPTH = BOTTOM_CAVITY_DEPTH
 HOLE_DEPTH = BOTTOM_CAVITY_DEPTH + 5.0
-
-GRID = 1.27
-
-PIN_HOLES = [
-    (0.00, 0.00, CENTER_HOLE_DIA),
-    (-4 * GRID, 0.00, FIXATION_PIN_DIA),
-    (4 * GRID, 0.00, FIXATION_PIN_DIA),
-    (-3 * GRID, 2 * GRID, CONTACT_PIN_DIA),
-    (2 * GRID, 4 * GRID, CONTACT_PIN_DIA),
-]
 
 
 # ---------- Mesh helpers ----------
@@ -330,15 +328,15 @@ def generate_clicker_parts(mesh: trimesh.Trimesh, slice_z: float):
     cross_z = slice_z + CROSS_DEPTH / 2
 
     vertical_cross = make_box(
-        CROSS_ARM,
-        CROSS_WIDTH,
+        CROSS_ARM + TOP_STEM_TOLERANCE,
+        CROSS_WIDTH + TOP_STEM_TOLERANCE,
         CROSS_DEPTH,
         [mesh_center[0], mesh_center[1], cross_z],
     )
 
     horizontal_cross = make_box(
-        CROSS_WIDTH,
-        CROSS_ARM,
+        CROSS_WIDTH + TOP_STEM_TOLERANCE,
+        CROSS_ARM + TOP_STEM_TOLERANCE,
         CROSS_DEPTH,
         [mesh_center[0], mesh_center[1], cross_z],
     )
@@ -350,26 +348,38 @@ def generate_clicker_parts(mesh: trimesh.Trimesh, slice_z: float):
 
     bottom_result = bottom_mesh
 
-    bottom_cavity_z = slice_z - BOTTOM_CAVITY_DEPTH / 2
+    bottom_cavity_z = slice_z - UNIVERSAL_CAVITY_DEPTH / 2
 
+    # Cut one universal square pocket instead of individual pin holes.
+    # This removes the switch-body area and leaves room for different PCB/pin variants.
     bottom_cavity = make_box(
         BOTTOM_CAVITY_SIZE,
         BOTTOM_CAVITY_SIZE,
-        BOTTOM_CAVITY_DEPTH,
+        UNIVERSAL_CAVITY_DEPTH,
         [mesh_center[0], mesh_center[1], bottom_cavity_z],
     )
 
     bottom_result = bottom_result.difference(bottom_cavity)
 
-    hole_z = slice_z - HOLE_DEPTH / 2
+    # Add back a support ring/wall around the center post area so the switch is held
+    # laterally, then cut a slightly oversized center hole through it.
+    center_support_outer_dia = CENTER_HOLE_DIA + CENTER_HOLE_TOLERANCE + 2 * CENTER_SUPPORT_WALL
+    center_support = make_cylinder(
+        center_support_outer_dia,
+        UNIVERSAL_CAVITY_DEPTH,
+        [mesh_center[0], mesh_center[1], bottom_cavity_z],
+    )
 
-    for x, y, dia in PIN_HOLES:
-        hole = make_cylinder(
-            dia,
-            HOLE_DEPTH,
-            [mesh_center[0] + x, mesh_center[1] + y, hole_z],
-        )
-        bottom_result = bottom_result.difference(hole)
+    bottom_result = bottom_result.union(center_support)
+
+    center_hole_z = slice_z - HOLE_DEPTH / 2
+    center_hole = make_cylinder(
+        CENTER_HOLE_DIA + CENTER_HOLE_TOLERANCE,
+        HOLE_DEPTH,
+        [mesh_center[0], mesh_center[1], center_hole_z],
+    )
+
+    bottom_result = bottom_result.difference(center_hole)
 
     return top_result, bottom_result
 
@@ -442,13 +452,13 @@ top_space = zmax - slice_z
 bottom_space = slice_z - zmin
 
 top_needed = max(HOUSING_DEPTH, CROSS_DEPTH)
-bottom_needed = max(BOTTOM_CAVITY_DEPTH, HOLE_DEPTH)
+bottom_needed = max(UNIVERSAL_CAVITY_DEPTH, HOLE_DEPTH)
 
 if top_space < top_needed:
     st.warning("Slice plane may be too high. The top cavity may cut through the model.")
 
 if bottom_space < bottom_needed:
-    st.warning("Slice plane may be too low. The bottom cavity or pin holes may cut through the model.")
+    st.warning("Slice plane may be too low. The bottom universal cavity may cut through the model.")
 
 st.subheader("Input Preview")
 st.caption("Gray mesh = uploaded STL. Red plane = slice height. Green wireframe cube = 19 mm Cherry MX reference.")
@@ -505,4 +515,3 @@ if st.button("Generate clicker STLs", type="primary"):
         except Exception as exc:
             st.error(f"Generation failed: {exc}")
             st.info("Try a simpler/watertight STL, a different slice height, or a slightly different scale.")
-            
