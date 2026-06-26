@@ -1,7 +1,0 @@
-streamlit
-trimesh
-numpy
-manifold3d
-shapely
-scipy
-plotly
