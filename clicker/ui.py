@@ -108,6 +108,8 @@ def render_geometry_controls(mesh, zmin: float, zmax: float, default_slice: floa
         }
 
         render_clearance_warnings(zmin, zmax, slice_z, cfg)
+        st.write("")
+        st.write("")
         generate_clicked = st.button("Generate", type="primary", use_container_width=True)
 
     return slice_z, cfg, generate_clicked
