@@ -1,0 +1,7 @@
+streamlit
+trimesh
+numpy
+plotly
+scipy
+manifold3d
+networkx
