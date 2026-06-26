@@ -1,4 +1,6 @@
 import trimesh
+from shapely.geometry import LineString, MultiPolygon
+from shapely.ops import polygonize, unary_union
 
 from clicker.mesh import make_box, make_cylinder, safe_boolean_difference
 
@@ -212,50 +214,69 @@ def create_top_shell_base(
     slice_z: float,
     cfg: dict,
 ):
-    cavity_x, cavity_y = get_cavity_center(reference_mesh, cfg)
-
-    top_bounds = top_mesh.bounds
-    top_min = top_bounds[0]
-    top_max = top_bounds[1]
-
-    top_size_x = float(top_max[0] - top_min[0])
-    top_size_y = float(top_max[1] - top_min[1])
-
     wall_height = cfg["shell_wall_height"]
     wall_thickness = cfg["shell_wall_thickness"]
     outline_padding = cfg["shell_outline_padding"]
     base_floor = cfg["shell_base_floor"]
 
-    inner_x = top_size_x + outline_padding
-    inner_y = top_size_y + outline_padding
-
-    outer_x = inner_x + 2 * wall_thickness
-    outer_y = inner_y + 2 * wall_thickness
-
     total_depth = wall_height + cfg["bottom_cavity_depth"] + base_floor
 
-    base_center_z = slice_z - total_depth / 2
-
-    outer_base = make_box(
-        outer_x,
-        outer_y,
-        total_depth,
-        [cavity_x, cavity_y, base_center_z],
+    section = reference_mesh.section(
+        plane_origin=[0, 0, slice_z],
+        plane_normal=[0, 0, 1],
     )
 
-    socket_cut_z = slice_z - wall_height / 2
+    if section is None:
+        raise ValueError("Could not create outline from slice plane.")
 
-    inner_socket_cut = make_box(
-        inner_x,
-        inner_y,
-        wall_height + 0.05,
-        [cavity_x, cavity_y, socket_cut_z],
+    lines = []
+
+    for path in section.discrete:
+        if len(path) >= 2:
+            points_2d = [(float(p[0]), float(p[1])) for p in path]
+            lines.append(LineString(points_2d))
+
+    if not lines:
+        raise ValueError("Slice outline failed. Try moving the slice plane.")
+
+    polygons = list(polygonize(lines))
+
+    if not polygons:
+        raise ValueError("Could not turn slice outline into a closed polygon.")
+
+    outline = unary_union(polygons)
+
+    if isinstance(outline, MultiPolygon):
+        outline = max(outline.geoms, key=lambda polygon: polygon.area)
+
+    inner_outline = outline.buffer(
+        outline_padding,
+        join_style=2,
     )
+
+    outer_outline = outline.buffer(
+        outline_padding + wall_thickness,
+        join_style=2,
+    )
+
+    outer_base = trimesh.creation.extrude_polygon(
+        outer_outline,
+        height=total_depth,
+    )
+
+    outer_base.apply_translation([0, 0, slice_z - total_depth])
+
+    inner_socket_cut = trimesh.creation.extrude_polygon(
+        inner_outline,
+        height=wall_height + 0.05,
+    )
+
+    inner_socket_cut.apply_translation([0, 0, slice_z - wall_height - 0.025])
 
     shell_base = safe_boolean_difference(
         outer_base,
         inner_socket_cut,
-        "top shell socket opening",
+        "top shell outline socket opening",
     )
 
     return shell_base
