@@ -85,122 +85,26 @@ def render_geometry_controls(mesh, zmin: float, zmax: float, default_slice: floa
 
         with st.expander("Advanced settings", expanded=False):
             st.markdown("**Fit**")
-            stem_tolerance = st.number_input(
-                "Stem tolerance (mm)",
-                0.00,
-                1.00,
-                DEFAULTS["stem_tolerance"],
-                0.05,
-            )
-            center_hole_tolerance = st.number_input(
-                "Center hole tolerance (mm)",
-                0.00,
-                1.50,
-                DEFAULTS["center_hole_tolerance"],
-                0.05,
-            )
-            top_circular_clearance = st.number_input(
-                "Top circular clearance (mm)",
-                0.00,
-                3.00,
-                DEFAULTS["top_circular_clearance"],
-                0.10,
-            )
+            stem_tolerance = st.number_input("Stem tolerance (mm)", 0.00, 1.00, DEFAULTS["stem_tolerance"], 0.05)
+            center_hole_tolerance = st.number_input("Center hole tolerance (mm)", 0.00, 1.50, DEFAULTS["center_hole_tolerance"], 0.05)
+            top_circular_clearance = st.number_input("Top circular clearance (mm)", 0.00, 3.00, DEFAULTS["top_circular_clearance"], 0.10)
 
             st.markdown("**Dimensions**")
-            housing_size = st.number_input(
-                "Top housing pocket size (mm)",
-                10.0,
-                25.0,
-                DEFAULTS["housing_size"],
-                0.1,
-            )
-            housing_depth = st.number_input(
-                "Top housing depth (mm)",
-                1.0,
-                12.0,
-                DEFAULTS["housing_depth"],
-                0.1,
-            )
-            cross_width = st.number_input(
-                "Cross width (mm)",
-                2.0,
-                8.0,
-                DEFAULTS["cross_width"],
-                0.05,
-            )
-            cross_arm = st.number_input(
-                "Cross arm thickness (mm)",
-                0.5,
-                4.0,
-                DEFAULTS["cross_arm"],
-                0.05,
-            )
-            cross_depth = st.number_input(
-                "Cross depth (mm)",
-                1.0,
-                10.0,
-                DEFAULTS["cross_depth"],
-                0.1,
-            )
-            bottom_cavity_size = st.number_input(
-                "Bottom cavity size (mm)",
-                10.0,
-                25.0,
-                DEFAULTS["bottom_cavity_size"],
-                0.1,
-            )
-            bottom_cavity_depth = st.number_input(
-                "Bottom cavity depth (mm)",
-                1.0,
-                12.0,
-                DEFAULTS["bottom_cavity_depth"],
-                0.1,
-            )
-            center_hole_dia = st.number_input(
-                "Center hole diameter (mm)",
-                2.0,
-                8.0,
-                DEFAULTS["center_hole_dia"],
-                0.05,
-            )
-            center_support_outer_dia = st.number_input(
-                "Center support outer diameter (mm)",
-                4.0,
-                12.0,
-                DEFAULTS["center_support_outer_dia"],
-                0.1,
-            )
+            housing_size = st.number_input("Top housing pocket size (mm)", 10.0, 25.0, DEFAULTS["housing_size"], 0.1)
+            housing_depth = st.number_input("Top housing depth (mm)", 1.0, 12.0, DEFAULTS["housing_depth"], 0.1)
+            cross_width = st.number_input("Cross width (mm)", 2.0, 8.0, DEFAULTS["cross_width"], 0.05)
+            cross_arm = st.number_input("Cross arm thickness (mm)", 0.5, 4.0, DEFAULTS["cross_arm"], 0.05)
+            cross_depth = st.number_input("Cross depth (mm)", 1.0, 10.0, DEFAULTS["cross_depth"], 0.1)
+            bottom_cavity_size = st.number_input("Bottom cavity size (mm)", 10.0, 25.0, DEFAULTS["bottom_cavity_size"], 0.1)
+            bottom_cavity_depth = st.number_input("Bottom cavity depth (mm)", 1.0, 12.0, DEFAULTS["bottom_cavity_depth"], 0.1)
+            center_hole_dia = st.number_input("Center hole diameter (mm)", 2.0, 8.0, DEFAULTS["center_hole_dia"], 0.05)
+            center_support_outer_dia = st.number_input("Center support outer diameter (mm)", 4.0, 12.0, DEFAULTS["center_support_outer_dia"], 0.1)
 
             st.markdown("**Top shell base mode**")
-            shell_wall_height = st.number_input(
-                "Shell wall height (mm)",
-                5.0,
-                30.0,
-                DEFAULTS["shell_wall_height"],
-                0.5,
-            )
-            shell_wall_thickness = st.number_input(
-                "Shell wall thickness (mm)",
-                0.5,
-                6.0,
-                DEFAULTS["shell_wall_thickness"],
-                0.1,
-            )
-            shell_outline_padding = st.number_input(
-                "Shell outline padding (mm)",
-                0.0,
-                8.0,
-                DEFAULTS["shell_outline_padding"],
-                0.1,
-            )
-            shell_base_floor = st.number_input(
-                "Shell base floor thickness (mm)",
-                1.0,
-                10.0,
-                DEFAULTS["shell_base_floor"],
-                0.1,
-            )
+            shell_wall_height = st.number_input("Shell wall height (mm)", 5.0, 30.0, DEFAULTS["shell_wall_height"], 0.5)
+            shell_wall_thickness = st.number_input("Shell wall thickness (mm)", 0.5, 6.0, DEFAULTS["shell_wall_thickness"], 0.1)
+            shell_outline_padding = st.number_input("Shell outline padding (mm)", 0.0, 8.0, DEFAULTS["shell_outline_padding"], 0.1)
+            shell_base_floor = st.number_input("Shell base floor thickness (mm)", 1.0, 10.0, DEFAULTS["shell_base_floor"], 0.1)
 
         cfg = {
             "generation_mode": generation_mode,
@@ -229,39 +133,34 @@ def render_geometry_controls(mesh, zmin: float, zmax: float, default_slice: floa
         st.write("")
         st.write("")
 
-        generate_clicked = st.button(
-            "Generate",
-            type="primary",
-            use_container_width=True,
-        )
+        generate_clicked = st.button("Generate", type="primary", use_container_width=True)
 
         return slice_z, cfg, generate_clicked
 
 
 def render_clearance_warnings(mesh, zmin: float, zmax: float, slice_z: float, cfg: dict):
+    mode = cfg.get("generation_mode", "split_clicker")
+
     top_space = zmax - slice_z
     bottom_space = slice_z - zmin
 
-    top_needed = max(
-        cfg["housing_depth"],
-        cfg["cross_depth"],
-    )
+    top_needed = max(cfg["housing_depth"], cfg["cross_depth"])
 
-    if cfg.get("generation_mode") == "top_shell_base":
-        bottom_needed = (
+    if mode == "top_shell_base":
+        base_depth = (
             cfg["shell_wall_height"]
             + cfg["bottom_cavity_depth"]
             + cfg["shell_base_floor"]
         )
     else:
-        bottom_needed = cfg["bottom_cavity_depth"]
+        base_depth = cfg["bottom_cavity_depth"]
 
     st.caption(f"Top clearance: {top_space:.2f} / {top_needed:.2f} mm")
 
-    if cfg.get("generation_mode") == "top_shell_base":
-        st.caption(f"Generated base depth: {bottom_needed:.2f} mm")
+    if mode == "top_shell_base":
+        st.caption(f"Generated base depth: {base_depth:.2f} mm")
     else:
-        st.caption(f"Bottom clearance: {bottom_space:.2f} / {bottom_needed:.2f} mm")
+        st.caption(f"Bottom clearance: {bottom_space:.2f} / {base_depth:.2f} mm")
 
     if top_space < top_needed:
         st.warning(
@@ -269,66 +168,42 @@ def render_clearance_warnings(mesh, zmin: float, zmax: float, slice_z: float, cf
             "The top cavity may be clipped."
         )
 
-    if cfg.get("generation_mode") != "top_shell_base" and bottom_space < bottom_needed:
+    if mode != "top_shell_base" and bottom_space < base_depth:
         st.warning(
-            f"⚠️ Slice is {bottom_needed - bottom_space:.2f} mm too low. "
+            f"⚠️ Slice is {base_depth - bottom_space:.2f} mm too low. "
             "The bottom cavity may be clipped."
         )
 
     center = mesh.bounds.mean(axis=0)
-
     cavity_x = center[0] + cfg["cavity_x_offset"]
     cavity_y = center[1] + cfg["cavity_y_offset"]
 
     xmin, ymin, _ = mesh.bounds[0]
     xmax, ymax, _ = mesh.bounds[1]
 
-    largest_cavity = max(
-        cfg["housing_size"],
-        cfg["bottom_cavity_size"],
-    )
+    # In top_shell_base mode, only warn about the TOP cavity.
+    # Do not include bottom_cavity_size or shell outline size here because
+    # the generated base is intentionally allowed to extend past the original STL.
+    if mode == "top_shell_base":
+        check_size = cfg["housing_size"]
+    else:
+        check_size = max(cfg["housing_size"], cfg["bottom_cavity_size"])
 
-    if cfg.get("generation_mode") == "top_shell_base":
-        top_size_x = float(mesh.bounds[1][0] - mesh.bounds[0][0])
-        top_size_y = float(mesh.bounds[1][1] - mesh.bounds[0][1])
-
-        shell_x = (
-            top_size_x
-            + cfg["shell_outline_padding"]
-            + 2 * cfg["shell_wall_thickness"]
-        )
-        shell_y = (
-            top_size_y
-            + cfg["shell_outline_padding"]
-            + 2 * cfg["shell_wall_thickness"]
-        )
-
-        largest_cavity = max(largest_cavity, shell_x, shell_y)
-
-    half = largest_cavity / 2
+    half = check_size / 2
 
     x_left = cavity_x - half - xmin
     x_right = xmax - (cavity_x + half)
-
     y_back = cavity_y - half - ymin
     y_front = ymax - (cavity_y + half)
 
     if x_left < 0:
-        st.warning(
-            f"⚠️ Cavity extends {-x_left:.2f} mm past the left side."
-        )
+        st.warning(f"⚠️ Cavity extends {-x_left:.2f} mm past the left side.")
 
     if x_right < 0:
-        st.warning(
-            f"⚠️ Cavity extends {-x_right:.2f} mm past the right side."
-        )
+        st.warning(f"⚠️ Cavity extends {-x_right:.2f} mm past the right side.")
 
     if y_back < 0:
-        st.warning(
-            f"⚠️ Cavity extends {-y_back:.2f} mm past the back side."
-        )
+        st.warning(f"⚠️ Cavity extends {-y_back:.2f} mm past the back side.")
 
     if y_front < 0:
-        st.warning(
-            f"⚠️ Cavity extends {-y_front:.2f} mm past the front side."
-        )
+        st.warning(f"⚠️ Cavity extends {-y_front:.2f} mm past the front side.")
