@@ -1,6 +1,6 @@
 import trimesh
-from shapely.geometry import LineString, MultiPolygon
-from shapely.ops import polygonize, unary_union
+from shapely.geometry import Polygon, MultiPolygon
+from shapely.ops import unary_union
 
 from clicker.mesh import make_box, make_cylinder, safe_boolean_difference
 
@@ -34,7 +34,13 @@ def generate_top_shell_base_parts(mesh: trimesh.Trimesh, slice_z: float, cfg: di
         raise ValueError("Top slice failed. Move the slice plane lower.")
 
     top_result = cut_top_switch_cavity(top_mesh, mesh, slice_z, cfg)
-    shell_base = create_top_shell_base(top_mesh, mesh, slice_z, cfg)
+
+    shell_base = create_top_shell_base(
+        top_mesh=top_mesh,
+        reference_mesh=mesh,
+        slice_z=slice_z,
+        cfg=cfg,
+    )
 
     shell_base = cut_bottom_switch_cavity(shell_base, mesh, slice_z, cfg)
 
@@ -208,6 +214,48 @@ def cut_bottom_switch_cavity(
     return bottom_result
 
 
+def get_slice_outline_polygon(reference_mesh: trimesh.Trimesh, slice_z: float):
+    section = reference_mesh.section(
+        plane_origin=[0, 0, slice_z],
+        plane_normal=[0, 0, 1],
+    )
+
+    if section is None:
+        raise ValueError("Could not create outline from slice plane.")
+
+    polygons = []
+
+    for path in section.discrete:
+        if len(path) < 3:
+            continue
+
+        points_2d = [(float(p[0]), float(p[1])) for p in path]
+
+        if points_2d[0] != points_2d[-1]:
+            points_2d.append(points_2d[0])
+
+        polygon = Polygon(points_2d)
+
+        if polygon.is_valid and polygon.area > 0:
+            polygons.append(polygon)
+
+    if not polygons:
+        raise ValueError("Could not create a closed outline from the slice.")
+
+    outline = unary_union(polygons)
+
+    if isinstance(outline, MultiPolygon):
+        outline = max(outline.geoms, key=lambda p: p.area)
+
+    return outline
+
+
+def extrude_polygon_down(polygon, top_z: float, depth: float):
+    mesh = trimesh.creation.extrude_polygon(polygon, height=depth)
+    mesh.apply_translation([0, 0, top_z - depth])
+    return mesh
+
+
 def create_top_shell_base(
     top_mesh: trimesh.Trimesh,
     reference_mesh: trimesh.Trimesh,
@@ -221,62 +269,38 @@ def create_top_shell_base(
 
     total_depth = wall_height + cfg["bottom_cavity_depth"] + base_floor
 
-    section = reference_mesh.section(
-        plane_origin=[0, 0, slice_z],
-        plane_normal=[0, 0, 1],
-    )
+    outline = get_slice_outline_polygon(reference_mesh, slice_z)
 
-    if section is None:
-        raise ValueError("Could not create outline from slice plane.")
-
-    lines = []
-
-    for path in section.discrete:
-        if len(path) >= 2:
-            points_2d = [(float(p[0]), float(p[1])) for p in path]
-            lines.append(LineString(points_2d))
-
-    if not lines:
-        raise ValueError("Slice outline failed. Try moving the slice plane.")
-
-    polygons = list(polygonize(lines))
-
-    if not polygons:
-        raise ValueError("Could not turn slice outline into a closed polygon.")
-
-    outline = unary_union(polygons)
-
-    if isinstance(outline, MultiPolygon):
-        outline = max(outline.geoms, key=lambda polygon: polygon.area)
+    insert_clearance = cfg.get("shell_insert_clearance", outline_padding / 2)
+    insert_depth = cfg.get("shell_insert_depth", wall_height)
 
     inner_outline = outline.buffer(
-        outline_padding,
+        insert_clearance,
         join_style=2,
     )
 
     outer_outline = outline.buffer(
-        outline_padding + wall_thickness,
+        insert_clearance + wall_thickness,
         join_style=2,
     )
 
-    outer_base = trimesh.creation.extrude_polygon(
+    outer_base = extrude_polygon_down(
         outer_outline,
-        height=total_depth,
+        top_z=slice_z,
+        depth=total_depth,
     )
 
-    outer_base.apply_translation([0, 0, slice_z - total_depth])
-
-    inner_socket_cut = trimesh.creation.extrude_polygon(
+    insert_cutter = extrude_polygon_down(
         inner_outline,
-        height=wall_height + 0.05,
+        top_z=slice_z + 0.05,
+        depth=insert_depth + 0.10,
     )
-
-    inner_socket_cut.apply_translation([0, 0, slice_z - wall_height - 0.025])
 
     shell_base = safe_boolean_difference(
         outer_base,
-        inner_socket_cut,
-        "top shell outline socket opening",
+        insert_cutter,
+        "top clicker insert cavity",
     )
 
+    return shell_base
     return shell_base
