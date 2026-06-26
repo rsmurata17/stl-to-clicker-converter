@@ -6,3 +6,4 @@ scipy
 manifold3d
 networkx
 shapely
+rtree
