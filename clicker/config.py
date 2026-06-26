@@ -25,8 +25,8 @@ DEFAULTS = {
     "center_support_outer_dia": 7.00,
 
     # Top shell base mode
-    "shell_wall_height": 15.0,
+    "shell_wall_height": 10.0,
     "shell_wall_thickness": 2.0,
     "shell_outline_padding": 2.0,
-    "shell_base_floor": 3.0,
+    "shell_base_floor": 2.0,
 }
