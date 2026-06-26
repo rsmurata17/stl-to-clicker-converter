@@ -262,17 +262,16 @@ def create_top_shell_base(
     slice_z: float,
     cfg: dict,
 ):
-    wall_height = cfg["shell_wall_height"]
     wall_thickness = cfg["shell_wall_thickness"]
-    outline_padding = cfg["shell_outline_padding"]
     base_floor = cfg["shell_base_floor"]
 
-    total_depth = wall_height + cfg["bottom_cavity_depth"] + base_floor
+    insert_depth = cfg.get("shell_insert_depth", cfg["shell_wall_height"])
+    insert_clearance = cfg.get("shell_insert_clearance", 0.35)
+    outline_padding = cfg.get("shell_outline_padding", 0.5)
+
+    total_depth = insert_depth + cfg["bottom_cavity_depth"] + base_floor
 
     outline = get_slice_outline_polygon(reference_mesh, slice_z)
-
-    insert_clearance = cfg.get("shell_insert_clearance", outline_padding / 2)
-    insert_depth = cfg.get("shell_insert_depth", wall_height)
 
     inner_outline = outline.buffer(
         insert_clearance,
@@ -280,7 +279,7 @@ def create_top_shell_base(
     )
 
     outer_outline = outline.buffer(
-        insert_clearance + wall_thickness,
+        insert_clearance + wall_thickness + outline_padding,
         join_style=2,
     )
 
@@ -290,17 +289,16 @@ def create_top_shell_base(
         depth=total_depth,
     )
 
-    insert_cutter = extrude_polygon_down(
+    insert_cavity_cutter = extrude_polygon_down(
         inner_outline,
-        top_z=slice_z + 0.05,
-        depth=insert_depth + 0.10,
+        top_z=slice_z + 1.0,
+        depth=insert_depth + 1.5,
     )
 
     shell_base = safe_boolean_difference(
         outer_base,
-        insert_cutter,
+        insert_cavity_cutter,
         "top clicker insert cavity",
     )
 
-    return shell_base
     return shell_base
