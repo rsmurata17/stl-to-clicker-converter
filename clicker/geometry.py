@@ -42,10 +42,16 @@ def generate_top_shell_base_parts(mesh: trimesh.Trimesh, slice_z: float, cfg: di
         cfg=cfg,
     )
 
+    insert_depth = cfg.get("shell_insert_depth", cfg["shell_wall_height"])
+
+    # Cut the switch cavity below the top-shell insert pocket,
+    # not directly from the original slice plane.
+    switch_cavity_top_z = slice_z - insert_depth
+
     shell_base = cut_bottom_switch_cavity(
         shell_base,
         mesh,
-        slice_z,
+        switch_cavity_top_z,
         cfg,
     )
 
@@ -160,7 +166,7 @@ def cut_top_switch_cavity(
 def cut_bottom_switch_cavity(
     bottom_mesh: trimesh.Trimesh,
     reference_mesh: trimesh.Trimesh,
-    slice_z: float,
+    cavity_top_z: float,
     cfg: dict,
 ):
     cavity_x, cavity_y = get_cavity_center(reference_mesh, cfg)
@@ -170,7 +176,7 @@ def cut_bottom_switch_cavity(
     bottom_cavity_depth = cfg["bottom_cavity_depth"]
     bottom_cavity_size = cfg["bottom_cavity_size"]
 
-    bottom_cavity_z = slice_z - bottom_cavity_depth / 2
+    bottom_cavity_z = cavity_top_z - bottom_cavity_depth / 2
 
     bottom_cavity_box = make_box(
         bottom_cavity_size,
@@ -180,7 +186,7 @@ def cut_bottom_switch_cavity(
     )
 
     center_support_height = bottom_cavity_depth / 2
-    center_support_z = slice_z - bottom_cavity_depth + center_support_height / 2
+    center_support_z = cavity_top_z - bottom_cavity_depth + center_support_height / 2
 
     center_support = make_cylinder(
         cfg["center_support_outer_dia"],
@@ -202,7 +208,7 @@ def cut_bottom_switch_cavity(
 
     center_hole_dia = cfg["center_hole_dia"] + cfg["center_hole_tolerance"]
     center_hole_depth = bottom_cavity_depth
-    center_hole_z = slice_z - center_hole_depth / 2
+    center_hole_z = cavity_top_z - center_hole_depth / 2
 
     center_hole = make_cylinder(
         center_hole_dia,
