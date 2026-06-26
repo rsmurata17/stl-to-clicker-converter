@@ -42,7 +42,12 @@ def generate_top_shell_base_parts(mesh: trimesh.Trimesh, slice_z: float, cfg: di
         cfg=cfg,
     )
 
-    shell_base = cut_bottom_switch_cavity(shell_base, mesh, slice_z, cfg)
+    shell_base = cut_bottom_switch_cavity(
+        shell_base,
+        mesh,
+        slice_z,
+        cfg,
+    )
 
     return top_result, shell_base
 
