@@ -107,30 +107,85 @@ def render_geometry_controls(mesh, zmin: float, zmax: float, default_slice: floa
             "center_support_outer_dia": center_support_outer_dia,
         }
 
-        render_clearance_warnings(zmin, zmax, slice_z, cfg)
+        render_clearance_warnings(mesh, zmin, zmax, slice_z, cfg)
+
         st.write("")
         st.write("")
-        generate_clicked = st.button("Generate", type="primary", use_container_width=True)
-
-    return slice_z, cfg, generate_clicked
-
-
-def render_clearance_warnings(zmin: float, zmax: float, slice_z: float, cfg: dict):
-    top_space = zmax - slice_z
-    bottom_space = slice_z - zmin
-    top_needed = max(cfg["housing_depth"], cfg["cross_depth"])
-    bottom_needed = cfg["bottom_cavity_depth"]
-
-    st.caption(f"Top clearance: {top_space:.2f} / {top_needed:.2f} mm")
-    st.caption(f"Bottom clearance: {bottom_space:.2f} / {bottom_needed:.2f} mm")
-
-    if top_space < top_needed:
-        st.warning(
-            f"⚠️ Slice is {top_needed - top_space:.2f} mm too high. "
-            "The top cavity may be clipped."
+    
+        generate_clicked = st.button(
+            "Generate",
+            type="primary",
+            use_container_width=True,
         )
-    if bottom_space < bottom_needed:
-        st.warning(
-            f"⚠️ Slice is {bottom_needed - bottom_space:.2f} mm too low. "
-            "The bottom cavity may be clipped."
+    
+        return slice_z, cfg, generate_clicked
+    
+    
+    def render_clearance_warnings(mesh, zmin: float, zmax: float, slice_z: float, cfg: dict):
+    
+        # ---------- Z clearance ----------
+        top_space = zmax - slice_z
+        bottom_space = slice_z - zmin
+    
+        top_needed = max(
+            cfg["housing_depth"],
+            cfg["cross_depth"],
         )
+        bottom_needed = cfg["bottom_cavity_depth"]
+    
+        st.caption(f"Top clearance: {top_space:.2f} / {top_needed:.2f} mm")
+        st.caption(f"Bottom clearance: {bottom_space:.2f} / {bottom_needed:.2f} mm")
+    
+        if top_space < top_needed:
+            st.warning(
+                f"⚠️ Slice is {top_needed - top_space:.2f} mm too high. "
+                "The top cavity may be clipped."
+            )
+    
+        if bottom_space < bottom_needed:
+            st.warning(
+                f"⚠️ Slice is {bottom_needed - bottom_space:.2f} mm too low. "
+                "The bottom cavity may be clipped."
+            )
+    
+        # ---------- X/Y clearance ----------
+        center = mesh.bounds.mean(axis=0)
+    
+        cavity_x = center[0] + cfg["cavity_x_offset"]
+        cavity_y = center[1] + cfg["cavity_y_offset"]
+    
+        xmin, ymin, _ = mesh.bounds[0]
+        xmax, ymax, _ = mesh.bounds[1]
+    
+        largest_cavity = max(
+            cfg["housing_size"],
+            cfg["bottom_cavity_size"],
+        )
+    
+        half = largest_cavity / 2
+    
+        x_left = cavity_x - half - xmin
+        x_right = xmax - (cavity_x + half)
+    
+        y_back = cavity_y - half - ymin
+        y_front = ymax - (cavity_y + half)
+    
+        if x_left < 0:
+            st.warning(
+                f"⚠️ Cavity extends {-x_left:.2f} mm past the left side."
+            )
+    
+        if x_right < 0:
+            st.warning(
+                f"⚠️ Cavity extends {-x_right:.2f} mm past the right side."
+            )
+    
+        if y_back < 0:
+            st.warning(
+                f"⚠️ Cavity extends {-y_back:.2f} mm past the back side."
+            )
+    
+        if y_front < 0:
+            st.warning(
+                f"⚠️ Cavity extends {-y_front:.2f} mm past the front side."
+            )
