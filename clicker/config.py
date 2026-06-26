@@ -6,7 +6,7 @@ DEFAULTS = {
     "cross_width": 4.20,
     "cross_arm": 1.45,
     "cross_depth": 4.2,
-    "stem_tolerance": 0.20,
+    "stem_tolerance": 0.15,
     "top_circular_clearance": 1.20,
     "cavity_x_offset": 0.0,
     "cavity_y_offset": 0.0,
